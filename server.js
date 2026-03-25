@@ -1,6 +1,6 @@
 const webSocket = require("ws");
 
-const PORT = 3000; // Cambiado a 4000 para que coincida con tu ngrok
+const PORT = 4000; 
 const TIMEOUT = 5000;
 
 const wss = new webSocket.Server({ port: PORT });
@@ -14,7 +14,6 @@ wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
         let data;
         try {
-            // Convertimos a string por si llega como Buffer
             data = JSON.parse(msg.toString());
         } catch (e) {
             return ws.send(JSON.stringify({ error: "Ese Json ta paila mk" }));
@@ -28,7 +27,6 @@ wss.on("connection", (ws) => {
                 handlePulse(ws, data);
                 break;
             case "get-servers":
-                // Evitamos que falle si no has creado la función
                 ws.send(JSON.stringify({ type: "servers-list", servers }));
                 break;
             default:
@@ -41,7 +39,7 @@ function handleRegister(ws, data) {
     const { id, url } = data;
 
     if (!id || !url) {
-        return ws.send(JSON.stringify({ // CORREGIDO: de escape a ws
+        return ws.send(JSON.stringify({ 
             type: "error",
             message: "Faltaron datos"
         }));
@@ -60,14 +58,14 @@ function handleRegister(ws, data) {
 function handlePulse(ws, data) {
     const { id } = data;
 
-    if (!servers[id]) { // CORREGIDO: servers en plural
+    if (!servers[id]) { 
         return ws.send(JSON.stringify({
             type: "error",
             message: "Servidor no registrado, estudie"
         }));
     }
 
-    // CORREGIDO: servers en plural y Date.now()
+    
     servers[id].lastPulse = Date.now();
 
     ws.send(JSON.stringify({
@@ -76,7 +74,7 @@ function handlePulse(ws, data) {
     }));
 }
 
-// Limpiador de servidores muertos
+
 setInterval(() => {
     const now = Date.now();
     for (let id in servers) {
