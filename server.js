@@ -200,31 +200,127 @@ app.post("/sync", (req, res) => {
 });
 
 
-// ========================
-// DASHBOARD
-// ========================
+
 app.get("/", (req, res) => {
     res.send(`
     <html>
+    <head>
+        <title>Coordinator Dashboard</title>
+        <style>
+            body {
+                font-family: Arial;
+                background: #0f172a;
+                color: white;
+                margin: 0;
+                padding: 20px;
+            }
+
+            h1 {
+                text-align: center;
+            }
+
+            .container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .card {
+                background: #1e293b;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            }
+
+            .status {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .status span {
+                padding: 5px 10px;
+                border-radius: 5px;
+            }
+
+            .primary {
+                background: green;
+            }
+
+            .secondary {
+                background: red;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+
+            li {
+                background: #334155;
+                margin: 5px 0;
+                padding: 10px;
+                border-radius: 5px;
+            }
+
+            input {
+                padding: 10px;
+                margin: 5px;
+                border-radius: 5px;
+                border: none;
+            }
+
+            button {
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                background: #3b82f6;
+                color: white;
+            }
+
+            button:hover {
+                background: #2563eb;
+            }
+        </style>
+    </head>
+
     <body>
-        <h1>Coordinator Dashboard</h1>
 
-        <p><b>Primario:</b> ${isPrimary}</p>
-        <p><b>Total workers:</b> <span id="count"></span></p>
+        <h1>🚀 Coordinator Dashboard</h1>
 
-        <h2>Workers activos</h2>
-        <ul id="workers"></ul>
+        <div class="status">
+            <p>
+                Estado: 
+                <span id="role"></span>
+            </p>
+            <p>Total Workers: <b id="count"></b></p>
+        </div>
 
-        <h2>Backups conocidos</h2>
-        <ul id="backups"></ul>
+        <div class="container">
 
-        <h3>Registrar Backup</h3>
-        <input id="id" placeholder="ID">
-        <input id="url" placeholder="wss://...">
-        <button onclick="addBackup()">Registrar</button>
+            <div class="card">
+                <h2>🖥️ Workers Activos</h2>
+                <ul id="workers"></ul>
+            </div>
 
-        <h3>Sincronización</h3>
-        <button onclick="sync()">Forzar sincronización</button>
+            <div class="card">
+                <h2>🗄️ Backups</h2>
+                <ul id="backups"></ul>
+            </div>
+
+            <div class="card">
+                <h3>➕ Registrar Backup</h3>
+                <input id="id" placeholder="ID del backup">
+                <input id="url" placeholder="wss://ngrok-url">
+                <button onclick="addBackup()">Registrar</button>
+            </div>
+
+            <div class="card">
+                <h3>🔄 Sincronización</h3>
+                <button onclick="sync()">Forzar Sync</button>
+            </div>
+
+        </div>
 
         <script>
             async function load() {
@@ -233,16 +329,28 @@ app.get("/", (req, res) => {
 
                 document.getElementById('count').innerText = data.totalWorkers;
 
+                const role = document.getElementById('role');
+                role.innerText = data.isPrimary ? "PRIMARIO" : "BACKUP";
+                role.className = data.isPrimary ? "primary" : "secondary";
+
                 const workers = document.getElementById('workers');
                 workers.innerHTML = "";
+
                 Object.values(data.workers).forEach(w => {
-                    workers.innerHTML += "<li>" + w.id + "</li>";
+                    const lastSeen = Date.now() - w.lastPulse;
+                    workers.innerHTML += 
+                        "<li><b>" + w.id + "</b><br/>" +
+                        "URL: " + w.url + "<br/>" +
+                        "Último pulse: " + lastSeen + " ms</li>";
                 });
 
                 const backups = document.getElementById('backups');
                 backups.innerHTML = "";
+
                 Object.values(data.backups).forEach(b => {
-                    backups.innerHTML += "<li>" + b.id + " - " + b.url + "</li>";
+                    backups.innerHTML += 
+                        "<li><b>" + b.id + "</b><br/>" +
+                        "URL: " + b.url + "</li>";
                 });
             }
 
@@ -261,12 +369,13 @@ app.get("/", (req, res) => {
 
             async function sync() {
                 await fetch('/sync', { method: 'POST' });
-                alert("Sync enviado");
+                alert("Sincronización enviada");
             }
 
             setInterval(load, 2000);
             load();
         </script>
+
     </body>
     </html>
     `);
